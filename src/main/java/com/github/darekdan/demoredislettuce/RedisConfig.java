@@ -1,7 +1,5 @@
 package com.github.darekdan.demoredislettuce;
 
-import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
-import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
 import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
@@ -22,12 +20,6 @@ public class RedisConfig {
     @Bean
     public RedisCacheManagerBuilderCustomizer redisCacheManagerBuilderCustomizer() {
         return builder -> {
-            // Configure serialization
-            PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator
-                    .builder()
-                    .allowIfBaseType(Item.class)
-                    .allowIfBaseType(String.class)
-                    .build();
 
             RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration
                     .defaultCacheConfig()
@@ -41,7 +33,6 @@ public class RedisConfig {
                     .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
                     .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(kryoSerializer)); // Use KRYO
 
-// --- 3. Apply Configurations to Builder ---
             builder
                     .cacheDefaults(defaultCacheConfig) // Apply default config to all caches
                     .withCacheConfiguration(ITEM_CACHE, itemCacheConfig); // Override for itemCache
