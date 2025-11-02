@@ -28,6 +28,7 @@ public class KryoRedisSerializer<T> implements RedisSerializer<T> {
         // Register classes here for better performance.
         // If a class is not registered, Kryo will write the
         // full class name, which is less efficient.
+        kryo.register(Item.class);
         kryo.register(ItemResponse.class);
         // Add other DTOs/Entities you plan to cache here.
         // kryo.register(AnotherCachedObject.class);
