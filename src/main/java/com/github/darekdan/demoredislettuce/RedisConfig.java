@@ -1,18 +1,19 @@
 package com.github.darekdan.demoredislettuce;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.jsontype.BasicPolymorphicTypeValidator;
 import com.fasterxml.jackson.databind.jsontype.PolymorphicTypeValidator;
 import org.springframework.boot.autoconfigure.cache.RedisCacheManagerBuilderCustomizer;
+import org.springframework.cache.annotation.EnableCaching;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.data.redis.cache.RedisCacheConfiguration;
-import org.springframework.data.redis.serializer.GenericJackson2JsonRedisSerializer;
 import org.springframework.data.redis.serializer.RedisSerializationContext;
+import org.springframework.data.redis.serializer.RedisSerializer;
 import org.springframework.data.redis.serializer.StringRedisSerializer;
 
 import java.time.Duration;
 
+@EnableCaching
 @Configuration
 public class RedisConfig {
 
@@ -25,26 +26,26 @@ public class RedisConfig {
             PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator
                     .builder()
                     .allowIfBaseType(Item.class)
-                    .allowIfBaseType(Object.class)
+                    .allowIfBaseType(String.class)
                     .build();
-
-            ObjectMapper objectMapper = new ObjectMapper();
-            objectMapper.activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL);
-
-            GenericJackson2JsonRedisSerializer jsonSerializer = new GenericJackson2JsonRedisSerializer(objectMapper);
 
             RedisCacheConfiguration defaultCacheConfig = RedisCacheConfiguration
                     .defaultCacheConfig()
                     .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
-                    .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(jsonSerializer));
+                    .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()));
 
+            RedisSerializer<Item> kryoSerializer = new KryoRedisSerializer<>();
+            RedisCacheConfiguration itemCacheConfig = RedisCacheConfiguration
+                    .defaultCacheConfig()
+                    .entryTtl(Duration.ofSeconds(15)) // Set 15-second TTL
+                    .serializeKeysWith(RedisSerializationContext.SerializationPair.fromSerializer(new StringRedisSerializer()))
+                    .serializeValuesWith(RedisSerializationContext.SerializationPair.fromSerializer(kryoSerializer)); // Use KRYO
 
-            // Configure a specific cache
-            builder.withCacheConfiguration(ITEM_CACHE, defaultCacheConfig.entryTtl(Duration.ofSeconds(15)) // Set 15-second TTL
-            );
-
-            // Configure default for any other caches (optional)
-            builder.withInitialCacheConfigurations(java.util.Collections.singletonMap("defaultCache", defaultCacheConfig));
+// --- 3. Apply Configurations to Builder ---
+            builder
+                    .cacheDefaults(defaultCacheConfig) // Apply default config to all caches
+                    .withCacheConfiguration(ITEM_CACHE, itemCacheConfig); // Override for itemCache
         };
     }
+
 }
