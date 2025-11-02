@@ -237,8 +237,8 @@ k6 run k6/loadTest.js
 
 running (1m00.1s), 000/246 VUs, 59898 complete and 0 interrupted iterations
 read_scenario  ✓ [======================================] 000/196 VUs  1m0s  900.00 iters/s
-write_scenario ✓ [======================================] 000/050 VUs  1m0s  100.00 iters/s```
-
+write_scenario ✓ [======================================] 000/050 VUs  1m0s  100.00 iters/s
+```
 
 ## Project structure
 ```
