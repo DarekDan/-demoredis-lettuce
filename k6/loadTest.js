@@ -4,7 +4,7 @@ import { Trend, Rate, Counter } from 'k6/metrics';
 
 // --- Configuration ---
 const BASE_URL = 'http://localhost:8080'; // Target your Spring Boot app
-const ITEM_ID_TO_TEST = 1; // Test against the item pre-loaded by schema.sql
+const MAX_ITEM_ID = 1001; // 1 default item + 1000 random items
 
 // --- Custom Metrics ---
 const readRequestDuration = new Trend('read_request_duration');
@@ -23,7 +23,7 @@ export const options = {
             rate: 900, // 90 iterations per second
             timeUnit: '1s',
             duration: '1m', // Run for 1 minute
-            preAllocatedVUs: 10,
+            preAllocatedVUs: 100,
             maxVUs: 500,
             exec: 'readTest', // Function to execute
         },
@@ -34,7 +34,7 @@ export const options = {
             rate: 100, // 10 iterations per second
             timeUnit: '1s',
             duration: '1m', // Run for 1 minute
-            preAllocatedVUs: 5,
+            preAllocatedVUs: 50,
             maxVUs: 200,
             exec: 'writeTest', // Function to execute
         },
@@ -58,6 +58,9 @@ export const options = {
 
 // --- Scenario 1: Read Test (GET) ---
 export function readTest() {
+    // Get a random item ID for each iteration
+    const ITEM_ID_TO_TEST = Math.floor(Math.random() * MAX_ITEM_ID) + 1;
+
     const res = http.get(`${BASE_URL}/items/${ITEM_ID_TO_TEST}`);
 
     const isSuccess = check(res, {
@@ -75,11 +78,14 @@ export function readTest() {
         cacheHitRate.add(false, { scenario: 'read_scenario' });
     }
 
-    sleep(0.01); // Wait 500ms
+    sleep(0.01); // Wait 10ms (was 500ms, reduced for higher load)
 }
 
 // --- Scenario 2: Write Test (PUT) ---
 export function writeTest() {
+    // Get a random item ID for each iteration
+    const ITEM_ID_TO_TEST = Math.floor(Math.random() * MAX_ITEM_ID) + 1;
+
     const url = `${BASE_URL}/items/${ITEM_ID_TO_TEST}`;
 
     // Generate a random name to update
@@ -105,5 +111,6 @@ export function writeTest() {
     writeRequestDuration.add(res.timings.duration, { scenario: 'write_scenario' });
     writeFailureRate.add(!isSuccess, { scenario: 'write_scenario' });
 
-    sleep(0.02); // Wait 1s
+    sleep(0.05); // Wait 50ms (was 1s, reduced for higher load)
 }
+

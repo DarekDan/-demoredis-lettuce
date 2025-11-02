@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <!--
+      1. Import Spring Boot's default properties (patterns, colors, etc.)
+      This file does NOT define appenders or a root logger.
+    -->
+    <include resource="org/springframework/boot/logging/logback/defaults.xml"/>
+
+    <!--
+      2. Define the CONSOLE appender manually.
+      This is copied from Spring's "console-appender.xml" but is
+      not attached to the root logger by default. We use Spring's
+      property for the log pattern.
+    -->
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>${CONSOLE_LOG_PATTERN}</pattern>
+            <charset>${CONSOLE_LOG_CHARSET}</charset>
+        </encoder>
+    </appender>
+
+    <!--
+      3. Create an AsyncAppender.
+      It will wrap the CONSOLE appender we just defined.
+    -->
+    <appender name="ASYNC" class="ch.qos.logback.classic.AsyncAppender">
+        <!--
+          Don't discard INFO/WARN/ERROR messages.
+          This setting (0) means the appender will block the main thread
+          if the queue is full, rather than discarding important logs.
+        -->
+        <discardingThreshold>0</discardingThreshold>
+
+        <!-- Default queue size is 256. 512 is a reasonable increase. -->
+        <queueSize>16384</queueSize>
+
+        <!--
+          Set to 'true' to include caller data (method, line number).
+          This has a significant performance cost. Keep 'false' for production.
+         -->
+        <includeCallerData>false</includeCallerData>
+
+        <!--
+          Tell the AsyncAppender to wrap the CONSOLE appender.
+        -->
+        <appender-ref ref="CONSOLE" />
+    </appender>
+
+    <!--
+      4. Configure the root logger.
+      This is now the *only* root logger definition, and it
+      *only* attaches the ASYNC appender.
+    -->
+    <root level="INFO">
+        <appender-ref ref="ASYNC" />
+    </root>
+
+    <!--
+      5. Set your application's package to DEBUG level.
+      By default, additivity="true", so these DEBUG logs will
+      flow up to the root logger and be handled by ASYNC.
+    -->
+    <logger name="com.github.darekdan" level="DEBUG"/>
+
+    <!-- Quiet down reactor/netty which can be very noisy on DEBUG -->
+    <logger name="reactor.netty" level="INFO"/>
+    <logger name="io.netty" level="INFO"/>
+
+</configuration>
+
